@@ -1,0 +1,2033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nicole — Training Program</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #fdf6f0;
+    --surface: #fff8f4;
+    --card: #ffffff;
+    --border: #f0e0d6;
+    --accent: #d4758a;
+    --accent2: #b07fa8;
+    --text: #3d2b2b;
+    --muted: #b09898;
+    --done-bg: #fdf0f3;
+    --done-border: #d4758a;
+    --done-text: #c0607a;
+    --cur-border: #b07fa8;
+    --tag-bg: #f9eef5;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: radial-gradient(circle at 80% 10%, #fde8ef55 0%, transparent 50%),
+                      radial-gradient(circle at 10% 90%, #ede4f555 0%, transparent 50%);
+  }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── SHARED ── */
+  .app-header { padding: 36px 24px 0; max-width: 680px; margin: 0 auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .header-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  h1 { font-family: 'Playfair Display', serif; font-size: clamp(38px, 8vw, 58px); line-height: 1; font-weight: 700; color: var(--text); }
+  h1 span { color: var(--accent); font-style: italic; }
+  .back-btn { flex-shrink: 0; margin-top: 8px; padding: 8px 18px; border-radius: 40px; border: 1.5px solid var(--border); background: white; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; white-space: nowrap; box-shadow: 0 1px 4px rgba(180,100,120,0.07); }
+  .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── OVERVIEW ── */
+  #view-overview { padding-bottom: 60px; }
+  .overview-stats { max-width: 680px; margin: 24px auto 0; padding: 0 24px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .stat-card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 18px 14px; text-align: center; box-shadow: 0 2px 12px rgba(180,100,120,0.07); }
+  .stat-val { font-family: 'Playfair Display', serif; font-size: 38px; color: var(--accent); line-height: 1; font-weight: 700; }
+  .stat-val.blue { color: var(--accent2); }
+  .stat-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 5px; }
+  .program-progress { max-width: 680px; margin: 20px auto 0; padding: 0 24px; }
+  .prog-meta { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .prog-meta span { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .prog-meta strong { color: var(--accent); }
+  .prog-track { height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 99px; transition: width 0.6s ease; }
+  .section-divider { max-width: 680px; margin: 28px auto 14px; padding: 0 24px; display: flex; align-items: center; gap: 12px; }
+  .section-divider span { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .weeks-grid { max-width: 680px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .week-card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 14px 12px 18px; cursor: pointer; transition: all 0.22s; position: relative; overflow: hidden; box-shadow: 0 2px 10px rgba(180,100,120,0.05); }
+  .week-card::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: var(--border); border-radius: 0 0 18px 18px; }
+  .wc-fill { position: absolute; bottom: 0; left: 0; height: 4px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.4s ease; border-radius: 0 0 0 18px; }
+  .week-card:hover:not(.locked) { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 6px 20px rgba(180,100,120,0.13); }
+  .week-card.current { border-color: var(--cur-border); box-shadow: 0 4px 16px rgba(176,127,168,0.18); }
+  .week-card.complete { border-color: var(--done-border); background: var(--done-bg); }
+  .week-card.complete .wc-fill { background: var(--done-border); }
+  .week-card.locked { opacity: 0.42; cursor: default; }
+  .wc-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .wc-num { font-family: 'Playfair Display', serif; font-size: 26px; line-height: 1; font-weight: 700; color: var(--text); }
+  .wc-days { display: flex; gap: 4px; margin-top: 10px; margin-bottom: 7px; }
+  .wc-day-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+  .wc-day-dot.done { background: var(--done-border); }
+  .wc-status { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); }
+  .wc-status.done-text { color: var(--done-text); }
+  .wc-status.cur-text { color: var(--accent2); }
+
+  /* ── WEEK VIEW ── */
+  #view-week { padding-bottom: 60px; }
+  .week-prog-section { max-width: 680px; margin: 20px auto 0; padding: 0 24px; }
+  .week-prog-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .week-prog-meta span { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .week-prog-meta strong { color: var(--accent); }
+  .week-prog-track { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .week-prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 99px; transition: width 0.6s ease; }
+  .day-tabs { display: flex; gap: 8px; padding: 20px 24px 0; max-width: 680px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
+  .day-tabs::-webkit-scrollbar { display: none; }
+  .day-tab { flex-shrink: 0; padding: 8px 20px; border-radius: 40px; border: 1.5px solid var(--border); background: white; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap; box-shadow: 0 1px 4px rgba(180,100,120,0.06); }
+  .day-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .day-tab.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; box-shadow: 0 3px 12px rgba(212,117,138,0.35); }
+  .day-tab.completed { border-color: var(--done-border); color: var(--done-text); background: var(--done-bg); }
+  .day-tab.completed.active { background: var(--done-border); border-color: var(--done-border); color: white; }
+  main { max-width: 680px; margin: 20px auto 80px; padding: 0 24px; }
+
+  /* ── CARDIO ── */
+  .cardio-block { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 18px 20px; margin-bottom: 14px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 10px rgba(180,100,120,0.06); }
+  .cardio-icon { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #fde8ef, #f5ddf5); border: 1px solid #f0c8d8; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .cardio-info h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; color: var(--text); }
+  .cardio-info p { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  /* ── GROUP LABEL ── */
+  .group-label { display: flex; align-items: center; gap: 10px; margin: 22px 0 10px; }
+  .group-label-text { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .group-badge { font-size: 10px; font-family: 'DM Mono', monospace; padding: 2px 10px; border-radius: 20px; background: var(--tag-bg); color: var(--accent2); border: 1px solid #e8d4f0; }
+  .group-badge.giant { background: #fdeef3; color: var(--accent); border-color: #f5c8d8; }
+  .group-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .superset-group { border-left: 2.5px solid #e8c8d8; padding-left: 12px; margin-bottom: 14px; }
+  .superset-group.giant { border-color: #f0b8cc; }
+
+  /* ── EXERCISE CARD ── */
+  .exercise-card { background: white; border: 1.5px solid var(--border); border-radius: 18px; overflow: hidden; margin-bottom: 8px; transition: border-color 0.2s, box-shadow 0.2s; box-shadow: 0 1px 6px rgba(180,100,120,0.05); }
+  .exercise-card.all-done { border-color: var(--done-border); background: var(--done-bg); }
+  .exercise-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .exercise-header:hover { background: rgba(212,117,138,0.03); }
+  .exercise-name { font-size: 14px; font-weight: 600; flex: 1; line-height: 1.3; color: var(--text); }
+  .exercise-name-wrap { flex: 1; }
+  .exercise-note { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--accent2); margin-top: 3px; }
+  .exercise-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 8px; }
+  .sets-badge { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); padding: 2px 9px; background: var(--bg); border-radius: 20px; border: 1px solid var(--border); }
+  .check-count { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--accent2); min-width: 28px; text-align: right; }
+  .check-count.done { color: var(--done-text); }
+  .chevron { color: var(--muted); font-size: 13px; margin-left: 4px; transition: transform 0.25s; }
+  .exercise-card.open .chevron { transform: rotate(180deg); }
+  .note-tag { font-size: 10px; color: var(--accent2); font-family: 'DM Mono', monospace; padding: 1px 7px; background: var(--tag-bg); border-radius: 10px; border: 1px solid #e8d4f0; }
+
+  /* ── SETS TABLE ── */
+  .sets-table { display: none; padding: 0 16px 14px; }
+  .exercise-card.open .sets-table { display: block; }
+  .sets-header, .set-row { display: grid; grid-template-columns: 24px 1fr 1fr 28px 32px; gap: 6px; align-items: center; }
+  .sets-header { padding: 0 4px 8px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+  .sets-header span { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace; text-align: center; }
+  .set-row { padding: 5px 4px; border-radius: 10px; transition: background 0.15s; }
+  .set-row.set-done { background: #fdeef3; }
+  .set-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; }
+  .set-target { text-align: center; font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; padding: 5px 4px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); }
+  .set-input { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 5px 8px; text-align: center; outline: none; transition: border-color 0.2s; }
+  .set-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(176,127,168,0.12); }
+  .set-input::placeholder { color: var(--muted); font-size: 10px; }
+  .set-input.has-value { border-color: #f0b8cc; color: var(--accent); background: #fff8fa; }
+  .timer-btn { width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid var(--border); background: white; color: var(--muted); font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .timer-btn:hover { border-color: var(--accent2); color: var(--accent2); background: var(--tag-bg); }
+  .set-checkbox { display: flex; align-items: center; justify-content: center; }
+  .set-checkbox input[type="checkbox"] { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 6px; cursor: pointer; position: relative; transition: all 0.2s; background: white; }
+  .set-checkbox input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); box-shadow: 0 2px 8px rgba(212,117,138,0.35); }
+  .set-checkbox input[type="checkbox"]:checked::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: white; font-size: 12px; font-weight: bold; }
+
+  /* ── COMPLETE BTN ── */
+  .complete-btn { width: 100%; padding: 16px; margin-top: 22px; border-radius: 16px; border: 2px solid var(--accent); background: transparent; color: var(--accent); font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; transition: all 0.22s; }
+  .complete-btn:hover { background: var(--accent); color: white; box-shadow: 0 6px 20px rgba(212,117,138,0.35); }
+  .complete-btn.day-complete { background: var(--done-bg); border-color: var(--done-border); color: var(--done-text); cursor: default; box-shadow: none; }
+
+  /* ── TIMER OVERLAY ── */
+  .timer-overlay { position: fixed; inset: 0; background: rgba(253,246,240,0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .timer-overlay.visible { opacity: 1; pointer-events: all; }
+  .timer-phase { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 14px; transition: color 0.4s; }
+  .timer-phase.work { color: var(--accent2); }
+  .timer-phase.rest { color: var(--accent); }
+  .timer-exercise-name { font-size: 14px; font-weight: 500; color: var(--muted); margin-bottom: 28px; text-align: center; max-width: 280px; line-height: 1.5; }
+  .timer-ring-wrap { position: relative; width: 200px; height: 200px; margin-bottom: 32px; }
+  .timer-ring-wrap svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .timer-ring-bg { fill: none; stroke: var(--border); stroke-width: 6; }
+  .timer-ring-fill { fill: none; stroke-width: 6; stroke-linecap: round; stroke-dasharray: 565; stroke-dashoffset: 0; transition: stroke-dashoffset 0.9s linear, stroke 0.4s; }
+  .timer-ring-fill.work { stroke: var(--accent2); }
+  .timer-ring-fill.rest { stroke: var(--accent); }
+  .timer-digits { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+  .timer-time { font-family: 'Playfair Display', serif; font-size: 58px; line-height: 1; font-weight: 700; transition: color 0.4s; }
+  .timer-time.work { color: var(--accent2); }
+  .timer-time.rest { color: var(--accent); }
+  .timer-set-info { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+  .timer-controls { display: flex; gap: 12px; align-items: center; }
+  .timer-ctrl-btn { padding: 11px 24px; border-radius: 40px; border: 1.5px solid var(--border); background: white; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(180,100,120,0.08); }
+  .timer-ctrl-btn:hover { border-color: var(--accent); }
+  .timer-ctrl-btn.primary { background: var(--accent2); border-color: var(--accent2); color: white; font-weight: 600; box-shadow: 0 4px 14px rgba(176,127,168,0.35); }
+  .timer-ctrl-btn.danger { border-color: #e8a0b0; color: #c07080; }
+  .timer-ctrl-btn.danger:hover { background: #fdeef3; }
+  .timer-ctrl-btn.rest-primary { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; box-shadow: 0 4px 14px rgba(212,117,138,0.35); }
+  @keyframes pulse-ring { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: 0.75; } }
+  .timer-ring-wrap.pulse { animation: pulse-ring 0.4s ease; }
+
+  /* ── TOAST ── */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--accent); color: white; padding: 12px 24px; border-radius: 40px; font-weight: 600; font-size: 13px; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); z-index: 999; pointer-events: none; box-shadow: 0 6px 20px rgba(212,117,138,0.4); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ VIEW: OVERVIEW ══════════════════════ -->
+<div id="view-overview" class="view active">
+  <div class="app-header">
+    <div>
+      <div class="header-label">Nicole · Training Program</div>
+      <h1>16 <span>Weeks</span></h1>
+    </div>
+  </div>
+
+  <div class="overview-stats">
+    <div class="stat-card"><div class="stat-val" id="ov-workouts">0</div><div class="stat-label">Workouts Done</div></div>
+    <div class="stat-card"><div class="stat-val blue" id="ov-weeks">0</div><div class="stat-label">Weeks Complete</div></div>
+    <div class="stat-card"><div class="stat-val" id="ov-curweek">1</div><div class="stat-label">Current Week</div></div>
+  </div>
+
+  <div class="program-progress">
+    <div class="prog-meta"><span>PROGRAM PROGRESS</span><span><strong id="ov-pct">0</strong>% complete</span></div>
+    <div class="prog-track"><div class="prog-fill" id="ov-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="section-divider"><span>All Weeks</span></div>
+  <div class="weeks-grid" id="weeks-grid"></div>
+</div>
+
+<!-- ══════════════════════ VIEW: WEEK ══════════════════════ -->
+<div id="view-week" class="view">
+  <div class="app-header">
+    <div>
+      <div class="header-label" id="wv-label">Nicole · Week 1</div>
+      <h1>WEEK <span id="wv-num">01</span></h1>
+    </div>
+    <button class="back-btn" onclick="showOverview()">← All Weeks</button>
+  </div>
+
+  <div class="week-prog-section">
+    <div class="week-prog-meta"><span>WEEK PROGRESS</span><span><strong id="wv-done">0</strong> / <span id="wv-total">4</span> workouts</span></div>
+    <div class="week-prog-track"><div class="week-prog-fill" id="wv-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="day-tabs" id="day-tabs"></div>
+
+  <div class="timer-overlay" id="timer-overlay">
+    <div class="timer-phase work" id="timer-phase">WORK</div>
+    <div class="timer-exercise-name" id="timer-ex-name"></div>
+    <div class="timer-ring-wrap" id="timer-ring-wrap">
+      <svg viewBox="0 0 200 200" width="200" height="200">
+        <circle class="timer-ring-bg" cx="100" cy="100" r="90"/>
+        <circle class="timer-ring-fill work" id="timer-ring-fill" cx="100" cy="100" r="90"/>
+      </svg>
+      <div class="timer-digits">
+        <div class="timer-time work" id="timer-digits">0:30</div>
+        <div class="timer-set-info" id="timer-set-info">SET 1</div>
+      </div>
+    </div>
+    <div class="timer-controls">
+      <button class="timer-ctrl-btn danger" onclick="stopTimer()">Cancel</button>
+      <button class="timer-ctrl-btn primary" id="timer-pause-btn" onclick="togglePause()">Pause</button>
+      <button class="timer-ctrl-btn" onclick="skipTimer()">Skip ›</button>
+    </div>
+  </div>
+
+  <main id="main-content"></main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// PROGRAM DATA
+// ══════════════════════════════════════════════
+const program = [
+  // ── WEEK 1 ──
+  { week: 1, days: [
+    { day: 1,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 3% incline · 3.0 mph", icon: "🏃" },
+      groups: [
+        { type: "Giantset", exercises: [
+          { name: "Kettlebell Gorilla Row", sets: 3, reps: "0:30", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Push Press", sets: 3, reps: "0:30", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Kettlebell Front Rack Walking Lunges", sets: 3, reps: "0:30", weight: "15 lbs", note: null, isTime: true, restSecs: 60 },
+        ]},
+        { type: "Giantset", exercises: [
+          { name: "Standing Rear Delt Flyes (Head Against Bench)", sets: 3, reps: "0:30", weight: "10 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Suitcase Dumbbell Wall Sit", sets: 3, reps: "0:30", weight: "10 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Dumbbell Upright Rows", sets: 3, reps: "0:30", weight: "10 lbs", note: null, isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Oblique Crunches", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "L Sit-Ups", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+    { day: 2,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · Resistance 4 · 3.0 mph", icon: "🏃" },
+      groups: [
+        { type: "Giantset", exercises: [
+          { name: "Staggered Stance Dumbbell RDL", sets: 3, reps: "0:30", weight: "12 lbs", note: "30 sec per side per set", isTime: true, restSecs: 0 },
+          { name: "Cross Body Hammer Curl", sets: 3, reps: "0:30", weight: "12 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Alternating Dumbbell Side Lunges", sets: 3, reps: "0:30", weight: "12 lbs", note: null, isTime: true, restSecs: 60 },
+        ]},
+        { type: "Giantset", exercises: [
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 3, reps: "0:30", weight: "10 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Zottman Curl", sets: 3, reps: "0:30", weight: "10 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "High Grip Dumbbell Squats", sets: 3, reps: "0:30", weight: "10 lbs", note: null, isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Air Bike", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+    { day: 3,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4% incline · 3.1 mph", icon: "🏃" },
+      groups: [
+        { type: "Giantset", exercises: [
+          { name: "Straight Arm Pulldowns (Rope)", sets: 3, reps: 10, weight: "40 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Kneeling Cable Crunch w/ Alternating Oblique Twists", sets: 3, reps: "0:30", weight: "40 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Kneeling High Cable Rows (Rope)", sets: 3, reps: 10, weight: "40 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Front Rack Dumbbell Step Ups", sets: 3, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Seated Dumbbell Shoulder Press", sets: 3, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Alternating V Ups", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+    { day: 4,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4% incline · 3.0 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Smith Machine Shrugs", sets: 3, reps: 10, weight: "90 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Smith Machine Stiff Leg Deadlifts", sets: 3, reps: 10, weight: "90 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell One-Arm Triceps Extension", sets: 3, reps: 10, weight: "12 lbs", note: "Reps per side", isTime: false, restSecs: 0 },
+          { name: "Dumbbell Rear Foot Elevated Split Squat", sets: 3, reps: 10, weight: "12 lbs", note: "Reps per side", isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Floor Press w/ Twist", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Weighted Frog Pump", sets: 4, reps: 12, weight: "15 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEK 2 ──
+  { week: 2, days: [
+    { day: 1,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4% incline · 3.0 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Goblet Squats", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wall Sit", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlift to Row", sets: 4, reps: 8, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Zottman Curl", sets: 4, reps: 10, weight: "8 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Glute Bridge", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Hamstring Curls On Exercise Ball", sets: 4, reps: 10, weight: null, note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Floor Press w/ Twist", sets: 4, reps: 12, weight: "10 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Z Press", sets: 4, reps: 10, weight: "10 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+    { day: 2,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 3% incline · 3.0 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Alternating Dumbbell Lunges", sets: 3, reps: "0:30", weight: "12 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Curtsy + Lateral Lunge", sets: 3, reps: "0:40", weight: null, note: "Switch sides after 20 sec", isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Bent Over Tricep Kickbacks", sets: 3, reps: 12, weight: "8 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Inchworm", sets: 3, reps: 8, weight: null, note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Russian Kettlebell Swing", sets: 4, reps: "0:30", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Kettlebell Front Squats", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell 21's", sets: 3, reps: 21, weight: "5 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Row to Reverse Fly", sets: 3, reps: "0:30", weight: "10 lbs", note: null, isTime: true, restSecs: 60 },
+        ]},
+      ],
+      cardio_end: { label: "Stairmaster Cool-Down", detail: "10 min", icon: "🪜" }
+    },
+    { day: 3,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4% incline · 3.1 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "DB Good Mornings", sets: 4, reps: 12, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Sumo Squats", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Reverse Plate Curls", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Front Plate Raise", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Weighted Frog Pump", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Exercise Ball Hip Bridge", sets: 4, reps: 10, weight: null, note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Toe Touches", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Crunches Legs On Exercise Ball", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 45 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "25 min · Resistance 10 · until 60 min total", icon: "⚡" }
+    },
+    { day: 4,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4% incline · 3.1 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "BOSU Squats (On Dome)", sets: 3, reps: 8, weight: null, note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Bent Over Barbell Rows", sets: 4, reps: 10, weight: "30 lbs", note: "Use pre-loaded barbell", isTime: false, restSecs: 0 },
+          { name: "Barbell Shrugs", sets: 4, reps: 8, weight: "30 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Split Squat", sets: 4, reps: 10, weight: "10 lbs", note: "Reps per side", isTime: false, restSecs: 0 },
+          { name: "Reverse Lunge Knee Taps", sets: 4, reps: "0:40", weight: null, note: "Switch sides after 20 sec", isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Top Down Neutral Grip Alternating Dumbbell Floor Press", sets: 4, reps: "0:40", weight: "10 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Single Dumbbell Skull Crusher (Floor)", sets: 4, reps: 12, weight: "10 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+      ],
+      cardio_end: { label: "Stairmaster Cool-Down", detail: "10 min", icon: "🪜" }
+    },
+  ]},
+
+  // ── WEEK 3 ──
+  { week: 3, days: [
+    { day: 1,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 5% incline · 3.0 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlift to Row", sets: 4, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Zottman Curl", sets: 4, reps: 10, weight: "10 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Goblet Squats", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wall Sit", sets: 4, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Glute Bridge", sets: 4, reps: 12, weight: "30 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Hamstring Curls On Exercise Ball", sets: 4, reps: 10, weight: null, note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Floor Press w/ Twist", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Z Press", sets: 4, reps: 8, weight: "12 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+    { day: 2,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4% incline · 3.0 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Alternating Dumbbell Lunges", sets: 3, reps: "0:35", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Curtsy + Lateral Lunge", sets: 3, reps: "0:40", weight: null, note: "Switch sides after 20 sec", isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Bent Over Tricep Kickbacks", sets: 4, reps: 10, weight: "10 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Inchworm", sets: 4, reps: 8, weight: null, note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Russian Kettlebell Swing", sets: 4, reps: 12, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Kettlebell Front Squats", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell 21's", sets: 3, reps: 21, weight: "8 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Row to Reverse Fly", sets: 3, reps: "0:30", weight: "10 lbs", note: null, isTime: true, restSecs: 60 },
+        ]},
+      ],
+      cardio_end: { label: "Stairmaster Cool-Down", detail: "15 min", icon: "🪜" }
+    },
+    { day: 3,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 5% incline · 3.1 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Sumo Squats", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 10, weight: null, note: "Machine - use working weight", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Reverse Plate Curls", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Front Plate Raise", sets: 4, reps: 12, weight: "15 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Weighted Frog Pump", sets: 4, reps: 12, weight: "30 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Exercise Ball Hip Bridge", sets: 4, reps: 10, weight: null, note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Toe Touches", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Crunches Legs On Exercise Ball", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 45 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "25 min · Resistance 10", icon: "⚡" }
+    },
+    { day: 4,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4% incline · 3.1 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "BOSU Squats (On Dome)", sets: 4, reps: 8, weight: null, note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Bent Over Barbell Rows", sets: 4, reps: 10, weight: "40 lbs", note: "Use pre-loaded barbell", isTime: false, restSecs: 0 },
+          { name: "Barbell Shrugs", sets: 4, reps: 10, weight: "40 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Split Squat", sets: 4, reps: 10, weight: "15 lbs", note: "Reps per side", isTime: false, restSecs: 0 },
+          { name: "Reverse Lunge Knee Taps", sets: 4, reps: "0:40", weight: null, note: "Switch sides after 20 sec", isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Top Down Neutral Grip Alternating Dumbbell Floor Press", sets: 4, reps: "0:40", weight: "12 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Single Dumbbell Skull Crusher (Floor)", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+      ],
+      cardio_end: { label: "Stairmaster Cool-Down", detail: "15 min", icon: "🪜" }
+    },
+  ]},
+
+  // ── WEEK 4 ──
+  { week: 4, days: [
+    { day: 1,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 6% incline · 3.1 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Standing Alternate Rotating Bicep Curls", sets: 4, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Single Leg Single Arm Dumbbell RDL", sets: 4, reps: 8, weight: "15 lbs", note: "Reps per side", isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Goblet Squats", sets: 3, reps: 8, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wall Sit", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Abductor Machine", sets: 5, reps: 10, weight: null, note: "Drop set — start heavy, decrease each set", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Floor Press w/ Twist", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Z Press", sets: 4, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+    { day: 2,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4% incline · 3.0 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Seated Single Arm Cable Rows", sets: 4, reps: 10, weight: "30 lbs", note: "8–12 rep range", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Alternating Dumbbell Lunges", sets: 4, reps: "0:35", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Curtsy + Lateral Lunge", sets: 4, reps: "0:40", weight: null, note: "Switch sides after 20 sec", isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Bent Over Tricep Kickbacks", sets: 4, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Inchworm", sets: 4, reps: 8, weight: null, note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Russian Kettlebell Swing", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Kettlebell Front Squats", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 5, reps: 10, weight: null, note: "Drop set — start heavy, decrease each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Stairmaster Cool-Down", detail: "15 min", icon: "🪜" }
+    },
+    { day: 3,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 6% incline · 3.1 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Sumo Squats", sets: 4, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 5, reps: 10, weight: null, note: "Drop set — start heavy, decrease each set", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Curls", sets: 3, reps: 10, weight: null, note: "Machine — use working weight", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Rounded Back Extension", sets: 4, reps: 12, weight: null, note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Front Plate Raise", sets: 4, reps: 12, weight: "15 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Toe Touches", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Crunches Legs On Exercise Ball", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Plank", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "25 min · Resistance 10", icon: "⚡" }
+    },
+    { day: 4,
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 6.5% incline · 3.1 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "BOSU Squats (On Dome)", sets: 3, reps: 10, weight: null, note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Bent Over Barbell Rows", sets: 4, reps: 10, weight: "40 lbs", note: "Use pre-loaded barbell", isTime: false, restSecs: 0 },
+          { name: "Barbell Shrugs", sets: 4, reps: 10, weight: "40 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Split Squat", sets: 4, reps: 8, weight: "20 lbs", note: "Reps per side", isTime: false, restSecs: 0 },
+          { name: "Pulsing Dumbbell RDL", sets: 4, reps: 8, weight: "20 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Top Down Neutral Grip Alternating Dumbbell Floor Press", sets: 4, reps: "0:40", weight: "12 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Single Dumbbell Skull Crusher (Floor)", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+      ],
+      cardio_end: { label: "Stairmaster Cool-Down", detail: "15 min", icon: "🪜" }
+    },
+  ]},
+
+  // ── WEEK 5 ── (Order: Quads → Pull → Glutes → Push)
+  { week: 5, days: [
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Suitcase Dumbbell Wall Sit", sets: 3, reps: "0:30", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Dumbbell Walking Lunges", sets: 3, reps: "0:30", weight: "15 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel-Elevated Goblet Squats", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Dumbbell Sumo Squat", sets: 3, reps: "AMRAP", weight: "30 lbs", note: "As many reps as possible", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: 10, weight: null, note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Seated Row Machine (Neutral Grip)", sets: 4, reps: 10, weight: null, note: "Use working weight", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Kneeling Single Arm High Cable Rows", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Hammer Curls Rope", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Narrow Grip EZ Bar Upright Rows", sets: 3, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wide Grip EZ Bar Curls", sets: 3, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 4, reps: "0:30", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "V Sit With Plate Rotation", sets: 4, reps: "0:30", weight: "15 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "20 min · 5% incline · 3.1 mph", icon: "🏃" }
+    },
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "45 Degree Leg Press Shoulder Width Stance", sets: 4, reps: 8, weight: null, note: "Use working weight", isTime: false, restSecs: 0 },
+          { name: "45 Degree Leg Press Wide Stance", sets: 4, reps: 8, weight: null, note: "Use working weight", isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Leg Dumbbell Hip Thrust", sets: 3, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 6, reps: 8, weight: null, note: "Drop set — start heavy, decrease each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "20 min · 5% incline · 3.3 mph", icon: "🏃" }
+    },
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Leverage Incline Chest Press", sets: 4, reps: 10, weight: null, note: "Use working weight", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Tricep Push Down Bar Attachment", sets: 4, reps: 10, weight: "30 lbs", note: "8–12 rep range", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 3, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Pull Overs", sets: 3, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 10, weight: "10 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 10, weight: "10 lbs", note: "Tempo: 3-0-1-0", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEK 6 ── (Order: Quads → Pull → Glutes → Push)
+  { week: 6, days: [
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Suitcase Dumbbell Wall Sit", sets: 3, reps: "0:35", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "Dumbbell Walking Lunges", sets: 3, reps: "0:35", weight: "15 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel-Elevated Goblet Squats", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Dumbbell Sumo Squat", sets: 4, reps: 8, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 5, reps: 10, weight: null, note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Seated Row Machine (Neutral Grip)", sets: 4, reps: 12, weight: "55 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Kneeling Single Arm High Cable Rows", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Hammer Curls Rope", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Narrow Grip EZ Bar Upright Rows", sets: 3, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wide Grip EZ Bar Curls", sets: 3, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 4, reps: "0:35", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "V Sit With Plate Rotation", sets: 4, reps: "0:35", weight: "15 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "20 min · 5.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "45 Degree Leg Press Shoulder Width Stance", sets: 4, reps: 10, weight: "140 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "45 Degree Leg Press Wide Stance", sets: 4, reps: 8, weight: "140 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Glute Bridge", sets: 4, reps: 12, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 5, reps: 8, weight: null, note: "Drop set: 130→110→90→70→50 lbs", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "20 min · 5% incline · 3.3 mph", icon: "🏃" }
+    },
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4.5% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Leverage Incline Chest Press", sets: 4, reps: 8, weight: "40 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Tricep Push Down Bar Attachment", sets: 4, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 3, reps: 8, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Pull Overs", sets: 3, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 10, weight: "10 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 10, weight: "10 lbs", note: "Tempo: 3-0-1-0", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 13", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEK 7 ── (Push → Pull → Glutes → Quads)
+  { week: 7, days: [
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 4.5% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Cable Tricep Push Down Bar Attachment", sets: 4, reps: 10, weight: "35 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leverage Incline Chest Press", sets: 4, reps: 10, weight: "40 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 3, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Pull Overs", sets: 3, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 12, weight: "10 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 13", icon: "⚡" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Seated Row Machine (Neutral Grip)", sets: 4, reps: 10, weight: "65 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Kneeling Single Arm High Cable Rows", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Hammer Curls Rope", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Narrow Grip EZ Bar Upright Rows", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wide Grip EZ Bar Curls", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Decline Oblique Crunches", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 3, reps: "0:35", weight: "15 lbs", note: null, isTime: true, restSecs: 0 },
+          { name: "V Sit With Plate Rotation", sets: 3, reps: "0:35", weight: "15 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 5.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "45 Degree Leg Press Shoulder Width Stance", sets: 4, reps: 8, weight: "160 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "45 Degree Leg Press Wide Stance", sets: 4, reps: 8, weight: "160 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Pull Through", sets: 4, reps: 8, weight: "50 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 7, weight: null, note: "Drop set: 130→110→90→70 lbs", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 6% incline · 3.3 mph", icon: "🏃" }
+    },
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Walking Lunges", sets: 3, reps: "0:35", weight: "20 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel-Elevated Goblet Squats", sets: 4, reps: 8, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Dumbbell Sumo Squat", sets: 4, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Step Ups", sets: 3, reps: 8, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 5, reps: 6, weight: null, note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 10", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEK 8 ── (Push → Pull → Glutes → Quads)
+  { week: 8, days: [
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 5% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Leverage Incline Chest Press", sets: 4, reps: 8, weight: "50 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Tricep Push Down Bar Attachment", sets: 4, reps: 12, weight: "35 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Pull Overs", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 12, weight: "10 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 3, reps: 12, weight: "10 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Seated Row Machine (Neutral Grip)", sets: 4, reps: 12, weight: "65 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Kneeling Single Arm High Cable Rows", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Hammer Curls Rope", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Narrow Grip EZ Bar Upright Rows", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wide Grip EZ Bar Curls", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank Rolls", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 5.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "45 Degree Leg Press Shoulder Width Stance", sets: 4, reps: 10, weight: "160 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "45 Degree Leg Press Wide Stance", sets: 4, reps: 8, weight: "160 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 12, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Pull Through", sets: 4, reps: 10, weight: "50 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 8, weight: null, note: "Drop set: 130→110→90→70 lbs", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 7% incline · 3.3 mph", icon: "🏃" }
+    },
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Walking Lunges", sets: 4, reps: "0:30", weight: "20 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel-Elevated Goblet Squats", sets: 4, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Dumbbell Sumo Squat", sets: 4, reps: 10, weight: "40 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Step Ups", sets: 3, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: 8, weight: null, note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEK 9 ── (Push → Pull → Glutes → Quads)
+  { week: 9, days: [
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 5% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Leverage Incline Chest Press", sets: 4, reps: 10, weight: "50 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Tricep Push Down Bar Attachment", sets: 4, reps: 12, weight: "35 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 4, reps: 12, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Pull Overs", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 12, weight: "10 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 12, weight: "10 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 3, reps: 15, weight: "10 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Seated Row Machine (Neutral Grip)", sets: 4, reps: 8, weight: "75 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Kneeling Single Arm High Cable Rows", sets: 4, reps: 12, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Hammer Curls Rope", sets: 4, reps: 12, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Narrow Grip EZ Bar Upright Rows", sets: 4, reps: 15, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wide Grip EZ Bar Curls", sets: 4, reps: 15, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank Rolls", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 5.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "45 Degree Leg Press Shoulder Width Stance", sets: 4, reps: 12, weight: "160 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "45 Degree Leg Press Wide Stance", sets: 4, reps: 10, weight: "160 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 15, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Pull Through", sets: 4, reps: 12, weight: "50 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 10, weight: "110 lbs", note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 7% incline · 3.3 mph", icon: "🏃" }
+    },
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Walking Lunges", sets: 4, reps: "0:35", weight: "25 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel-Elevated Goblet Squats", sets: 4, reps: 12, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Dumbbell Sumo Squat", sets: 4, reps: 12, weight: "40 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Step Ups", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: "AMRAP", weight: "90 lbs", note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEK 10 ── (Push → Pull → Glutes → Quads)
+  { week: 10, days: [
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 5% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Leverage Incline Chest Press", sets: 4, reps: 12, weight: "50 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Cable Tricep Extensions", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 4, reps: 15, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Pull Overs", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 10, weight: "12 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 3, reps: 15, weight: "10 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Plank With Rotation", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Seated Row Machine (Neutral Grip)", sets: 4, reps: 10, weight: "75 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Kneeling Single Arm High Cable Rows", sets: 4, reps: 15, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Hammer Curls Rope", sets: 4, reps: 15, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Narrow Grip EZ Bar Upright Rows", sets: 4, reps: 15, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wide Grip EZ Bar Curls", sets: 4, reps: 15, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank Rolls", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 5.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: "0:40", weight: "25 lbs", note: null, isTime: true, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Kickbacks", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 15, weight: "35 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 12, weight: "110 lbs", note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 7% incline · 3.3 mph", icon: "🏃" }
+    },
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "45 Degree Leg Press Shoulder Width Stance", sets: 4, reps: 12, weight: null, note: "Use working weight", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Smith Machine Split Squats", sets: 3, reps: 10, weight: "50 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Step Ups", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dual Dumbbell Sumo Squat", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: "AMRAP", weight: "100 lbs", note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEKS 11–16 (coming soon) ──
+  // ── WEEK 11 ── (Glutes + Quads + Pull + Push — complete!)
+  { week: 11, days: [
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: "0:40", weight: "25 lbs", note: null, isTime: true, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Kickbacks", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 15, weight: "35 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 12, weight: "120 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 7.5% incline · 3.3 mph", icon: "🏃" }
+    },
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "45 Degree Leg Press Shoulder Width Stance", sets: 4, reps: 15, weight: null, note: "Use working weight", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Smith Machine Split Squats", sets: 4, reps: 10, weight: "50 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Step Ups", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dual Dumbbell Sumo Squat", sets: 4, reps: 15, weight: "25 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: "AMRAP", weight: "100 lbs", note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Seated Row Machine (Neutral Grip)", sets: 4, reps: 12, weight: "75 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Kneeling Single Arm High Cable Rows", sets: 4, reps: 15, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Hammer Curls Rope", sets: 4, reps: 15, weight: "30 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Narrow Grip EZ Bar Upright Rows", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Wide Grip EZ Bar Curls", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank Rolls", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 6% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 5.5% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Leverage Incline Chest Press", sets: 4, reps: 12, weight: "50 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 4, reps: 15, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Pull Overs", sets: 4, reps: 15, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Cable Tricep Extensions", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 4, reps: 12, weight: "10 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Plank With Rotation", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEK 12 ── (Glutes + Push + Pull + Quads — complete!)
+  { week: 12, days: [
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: "0:35", weight: "25 lbs", note: null, isTime: true, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Kickbacks", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 15, weight: "35 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 12, weight: "130 lbs", note: "8–12 rep range", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 7.5% incline · 3.3 mph", icon: "🏃" }
+    },
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 5.5% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Giantset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 4, reps: 10, weight: "15 lbs", note: "8–12 rep range", isTime: false, restSecs: 0 },
+          { name: "Single Arm Dumbbell Chest Press", sets: 4, reps: 10, weight: "15 lbs", note: "8–12 rep range", isTime: false, restSecs: 0 },
+          { name: "Flat Dumbbell Flyes", sets: 4, reps: 10, weight: "15 lbs", note: "8–12 rep range", isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Cable Tricep Extensions", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 4, reps: 12, weight: "10 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Plank With Rotation", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "15 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Single Arm Rows", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Barbell Curls", sets: 3, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Reverse Grip Barbell Curls", sets: 3, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Pulldowns", sets: 4, reps: 10, weight: null, note: "Use working weight", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 4, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank Rolls", sets: 4, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 6.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Squat Hold", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Quad Dominant Lunges", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel Elevated Goblet Squat", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Lunge to Press", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Adductor Machine", sets: 4, reps: 12, weight: null, note: "Use working weight", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: 10, weight: "100 lbs", note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEK 13 ── (Glutes + Pull + Push + Quads — complete!)
+  { week: 13, days: [
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 12, weight: "30 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: "0:35", weight: "25 lbs", note: null, isTime: true, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Kickbacks", sets: 4, reps: 12, weight: "30 lbs", note: "8–12 rep range", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 12, weight: "40 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 12, weight: "130 lbs", note: "11–12 rep range", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 7.5% incline · 3.3 mph", icon: "🏃" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Single Arm Rows", sets: 4, reps: 12, weight: "25 lbs", note: "10–12 rep range", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Barbell Curls", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Reverse Grip Barbell Curls", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Pulldowns", sets: 4, reps: 12, weight: "20 lbs", note: "11–12 rep range", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 4, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank Rolls", sets: 4, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 6.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 6% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Giantset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 4, reps: 11, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Single Arm Dumbbell Chest Press", sets: 4, reps: 11, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Flat Dumbbell Flyes", sets: 4, reps: 11, weight: "15 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Cable Tricep Extensions", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 4, reps: "0:40", weight: "10 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Plank With Rotation", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "15 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Squat Hold", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Quad Dominant Lunges", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel Elevated Goblet Squat", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Dumbbell Lunge to Press", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Adductor Machine", sets: 4, reps: 12, weight: "90 lbs", note: "Use working weight", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: "AMRAP", weight: "100 lbs", note: "Drop set — decrease weight each set", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+  ]},
+
+  // ── WEEK 14 ── (Pull + Quads + Push + Glutes — complete!)
+  { week: 14, days: [
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Single Arm Rows", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Barbell Curls", sets: 4, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Reverse Grip Barbell Curls", sets: 4, reps: 9, weight: "30 lbs", note: "8–10 rep range", isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Pulldowns", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank Rolls", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "20 min · 6.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Squat Hold", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Quad Dominant Lunges", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel Elevated Goblet Squat", sets: 4, reps: 11, weight: "20 lbs", note: "10–12 rep range", isTime: false, restSecs: 0 },
+          { name: "Dumbbell Lunge to Press", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Adductor Machine", sets: 4, reps: 10, weight: "100 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: 9, weight: null, note: "110 lbs × 2, then 100 lbs × 2", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 6% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Giantset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 4, reps: 11, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Single Arm Dumbbell Chest Press", sets: 4, reps: 11, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Flat Dumbbell Flyes", sets: 4, reps: 11, weight: "15 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 12, weight: "12 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Cable Tricep Extensions", sets: 4, reps: 8, weight: "17 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 4, reps: "0:40", weight: "10 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Plank With Rotation", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 10, weight: "35 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: "0:40", weight: "25 lbs", note: null, isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Kickbacks", sets: 4, reps: 10, weight: "20 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 12, weight: "45 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 8, weight: "150 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 7.5% incline · 3.3 mph", icon: "🏃" }
+    },
+  ]},
+
+  // ── WEEK 15 ── (Pull + Quads + Push + Glutes — complete!)
+  { week: 15, days: [
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Single Arm Rows", sets: 4, reps: 12, weight: "25 lbs", note: "11–12 rep range", isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Barbell Curls", sets: 4, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Reverse Grip Barbell Curls", sets: 4, reps: 9, weight: "30 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Pulldowns", sets: 4, reps: 10, weight: "30 lbs", note: "8–12 rep range", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank Rolls", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Back Supported Hanging Knee Raises", sets: 3, reps: 13, weight: null, note: "10–15 rep range", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "20 min · 6.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Squat Hold", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Quad Dominant Lunges", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel Elevated Goblet Squat", sets: 4, reps: 9, weight: "25 lbs", note: "8–10 rep range", isTime: false, restSecs: 0 },
+          { name: "Static Bodyweight Lunges Front Foot Elevated", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Adductor Machine", sets: 4, reps: 11, weight: "110 lbs", note: "120 × 2, then 100 × 2 lbs", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: 11, weight: null, note: "110 lbs × 2, then 100 lbs × 2", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 6% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Giantset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 4, reps: 11, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Single Arm Dumbbell Chest Press", sets: 4, reps: 11, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Flat Dumbbell Flyes", sets: 4, reps: 9, weight: "15 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 12, weight: "12.5 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 10, weight: "12.5 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Cable Tricep Extensions", sets: 4, reps: 9, weight: "15 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 3, reps: "0:40", weight: "10 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Plank With Rotation", sets: 3, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "25 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: "0:40", weight: "25 lbs", note: null, isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Kickbacks", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 12, weight: "40 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 10, weight: "150 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 7.5% incline · 3.4 mph", icon: "🏃" }
+    },
+  ]},
+
+  // ── WEEK 16 ── (Quads + Glutes + Pull + Push — FINAL WEEK!)
+  { week: 16, days: [
+    { day: "Quads",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Squat Hold", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Quad Dominant Lunges", sets: 3, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Heel Elevated Goblet Squat", sets: 4, reps: 10, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Static Bodyweight Lunges Front Foot Elevated", sets: 4, reps: 9, weight: "20 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Adductor Machine", sets: 4, reps: 11, weight: "110 lbs", note: "120 × 2, then 100 × 2 lbs", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Leg Extension", sets: 4, reps: 10, weight: null, note: "120 lbs × 2, then 100 lbs × 2", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "20 min · Resistance 15", icon: "⚡" }
+    },
+    { day: "Glutes",
+      cardio_start: { label: "Stairmaster Warm-Up", detail: "10 min", icon: "🪜" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Romanian Deadlifts", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Alternating Reverse Dumbbell Lunges", sets: 4, reps: "0:40", weight: "25 lbs", note: null, isTime: true, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Dumbbell Hip Thrust", sets: 4, reps: 12, weight: "40 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Cable Kickbacks", sets: 4, reps: 12, weight: "20 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Seated Leg Curl", sets: 4, reps: 10, weight: null, note: "Drop set: 160→150→150→140 lbs", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "15 min · 7.5% incline · 3.4 mph", icon: "🏃" }
+    },
+    { day: "Pull",
+      cardio_start: { label: "Stationary Rowing Warm-Up", detail: "10 min", icon: "🚣" },
+      groups: [
+        { type: "Superset", exercises: [
+          { name: "Single Arm Rows", sets: 4, reps: 12, weight: "25 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Barbell Curls", sets: 4, reps: 10, weight: "30 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Reverse Grip Barbell Curls", sets: 4, reps: 8, weight: "30 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Pulldowns", sets: 4, reps: 11, weight: "30 lbs", note: "9–12 rep range", isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Hundreds", sets: 4, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 0 },
+          { name: "Plank Rolls", sets: 4, reps: "0:35", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Back Supported Hanging Knee Raises", sets: 3, reps: 13, weight: null, note: "11–15 rep range", isTime: false, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Treadmill Cool-Down", detail: "20 min · 6.5% incline · 3.2 mph", icon: "🏃" }
+    },
+    { day: "Push",
+      cardio_start: { label: "Treadmill Warm-Up", detail: "10 min · 6% incline · 3.2 mph", icon: "🏃" },
+      groups: [
+        { type: "Giantset", exercises: [
+          { name: "Dumbbell Crush Press", sets: 4, reps: 12, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Single Arm Dumbbell Chest Press", sets: 4, reps: 12, weight: "15 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Flat Dumbbell Flyes", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 60 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Standing Dumbbell Front Raises", sets: 4, reps: 12, weight: "12.5 lbs", note: null, isTime: false, restSecs: 0 },
+          { name: "Standing Dumbbell Arnold Press", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 45 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Single Arm Cable Tricep Extensions", sets: 4, reps: 10, weight: "15 lbs", note: null, isTime: false, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Otis Ups", sets: 4, reps: "0:40", weight: "10 lbs", note: null, isTime: true, restSecs: 30 },
+        ]},
+        { type: "Superset", exercises: [
+          { name: "Plank With Rotation", sets: 4, reps: "0:30", weight: null, note: null, isTime: true, restSecs: 30 },
+        ]},
+      ],
+      cardio_end: { label: "Elliptical Trainer Cool-Down", detail: "25 min · Resistance 15", icon: "⚡" }
+    },
+  ]},
+];
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let state = JSON.parse(localStorage.getItem('nicole_program_v2') || '{}');
+let currentWeek = 0;
+let currentDay  = 0;
+
+function saveState() { localStorage.setItem('nicole_program_v2', JSON.stringify(state)); }
+
+function getDayState(wi, di) {
+  const k = `w${wi}_d${di}`;
+  if (!state[k]) state[k] = { completed: false, sets: {} };
+  return state[k];
+}
+
+function weekDone(wi) {
+  const w = program[wi];
+  if (!w.days) return 0;
+  return w.days.filter((_, di) => getDayState(wi, di).completed).length;
+}
+
+function weekTotal(wi) { return program[wi].days ? program[wi].days.length : 4; }
+
+function totalDone() { return program.reduce((s, _, wi) => s + weekDone(wi), 0); }
+
+function currentWeekIdx() {
+  for (let i = 0; i < program.length; i++) {
+    if (!program[i].days) return i;
+    if (weekDone(i) < program[i].days.length) return i;
+  }
+  return program.length - 1;
+}
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+function showOverview() {
+  document.getElementById('view-overview').classList.add('active');
+  document.getElementById('view-week').classList.remove('active');
+  renderOverview();
+}
+
+function openWeek(wi) {
+  if (!program[wi].days) { showToast('📋 Week ' + program[wi].week + ' coming soon!'); return; }
+  currentWeek = wi;
+  currentDay = 0;
+  document.getElementById('view-overview').classList.remove('active');
+  document.getElementById('view-week').classList.add('active');
+  renderWeekView();
+}
+
+// ══════════════════════════════════════════════
+// OVERVIEW RENDER
+// ══════════════════════════════════════════════
+function renderOverview() {
+  const done = totalDone();
+  const wksDone = program.filter((w, wi) => w.days && weekDone(wi) === w.days.length).length;
+  const curWk = currentWeekIdx() + 1;
+  const totalW = program.reduce((s, w) => s + (w.days ? w.days.length : 4), 0);
+  const pct = Math.round(done / totalW * 100);
+
+  document.getElementById('ov-workouts').textContent = done;
+  document.getElementById('ov-weeks').textContent = wksDone;
+  document.getElementById('ov-curweek').textContent = curWk;
+  document.getElementById('ov-pct').textContent = pct;
+  document.getElementById('ov-fill').style.width = pct + '%';
+
+  document.getElementById('weeks-grid').innerHTML = program.map((w, wi) => {
+    const d = weekDone(wi), t = weekTotal(wi);
+    const locked = !w.days;
+    const complete = w.days && d === t;
+    const current = !locked && !complete && wi === currentWeekIdx();
+    const dots = Array.from({length: t}, (_, di) =>
+      `<div class="wc-day-dot ${getDayState(wi,di).completed ? 'done' : ''}"></div>`
+    ).join('');
+    const status = locked ? 'Coming soon' : complete ? '✓ Complete' : current ? 'In progress' : `${d}/${t} done`;
+    const sCls = complete ? 'done-text' : current ? 'cur-text' : '';
+    return `<div class="week-card ${locked?'locked':''} ${complete?'complete':''} ${current?'current':''}"
+      onclick="${locked ? '' : `openWeek(${wi})`}">
+      <div class="wc-label">WEEK</div>
+      <div class="wc-num">${String(w.week).padStart(2,'0')}</div>
+      <div class="wc-days">${dots}</div>
+      <div class="wc-status ${sCls}">${status}</div>
+      <div class="wc-fill" style="width:${Math.round(d/t*100)}%"></div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// WEEK VIEW RENDER
+// ══════════════════════════════════════════════
+function renderWeekView() {
+  const w = program[currentWeek];
+  document.getElementById('wv-label').textContent = `Nicole · Week ${w.week}`;
+  document.getElementById('wv-num').textContent = String(w.week).padStart(2,'0');
+  updateWeekProgress();
+  renderTabs();
+  renderDay();
+}
+
+function updateWeekProgress() {
+  const done = weekDone(currentWeek), total = weekTotal(currentWeek);
+  document.getElementById('wv-done').textContent = done;
+  document.getElementById('wv-total').textContent = total;
+  document.getElementById('wv-fill').style.width = (done/total*100) + '%';
+}
+
+function renderTabs() {
+  const w = program[currentWeek];
+  document.getElementById('day-tabs').innerHTML = w.days.map((d, di) => {
+    const ds = getDayState(currentWeek, di);
+    let cls = ds.completed ? ' completed' : '';
+    if (di === currentDay) cls += ' active';
+    const dayLabel = typeof d.day === 'number' ? `Day ${d.day}` : d.day;
+    return `<button class="day-tab${cls}" onclick="showDay(${di})">${dayLabel}</button>`;
+  }).join('');
+}
+
+function showDay(di) { currentDay = di; renderTabs(); renderDay(); }
+
+function renderDay() {
+  const d = program[currentWeek].days[currentDay];
+  const ds = getDayState(currentWeek, currentDay);
+  let html = '';
+
+  if (d.cardio_start) html += cardioBlock(d.cardio_start);
+
+  d.groups.forEach((g, gi) => {
+    const giant = g.type === 'Giantset';
+    html += `<div class="group-label">
+      <span class="group-label-text">${g.type}</span>
+      <span class="group-badge ${giant?'giant':''}">${g.exercises.length} exercises</span>
+    </div>
+    <div class="superset-group ${giant?'giant':''}">`;
+    g.exercises.forEach((ex, ei) => { html += exerciseCard(ex, gi, ei, ds); });
+    html += '</div>';
+  });
+
+  if (d.cardio_end) html += cardioBlock(d.cardio_end);
+
+  html += ds.completed
+    ? `<button class="complete-btn day-complete" disabled>✓ ${typeof d.day === 'number' ? 'Day ' + d.day : d.day} Complete</button>`
+    : `<button class="complete-btn" onclick="completeDay()">Mark ${typeof d.day === 'number' ? 'Day ' + d.day : d.day} Complete</button>`;
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = html;
+
+  main.querySelectorAll('.exercise-header').forEach(h =>
+    h.addEventListener('click', () => h.closest('.exercise-card').classList.toggle('open'))
+  );
+  main.querySelectorAll('.set-input').forEach(inp =>
+    inp.addEventListener('input', () => {
+      if (!ds.sets[inp.dataset.key]) ds.sets[inp.dataset.key] = {};
+      ds.sets[inp.dataset.key].note = inp.value;
+      inp.classList.toggle('has-value', !!inp.value.trim());
+      saveState();
+    })
+  );
+  main.querySelectorAll('.set-check').forEach(cb =>
+    cb.addEventListener('change', () => {
+      if (!ds.sets[cb.dataset.key]) ds.sets[cb.dataset.key] = {};
+      ds.sets[cb.dataset.key].checked = cb.checked;
+      saveState();
+      updateCardDone(cb);
+    })
+  );
+}
+
+function cardioBlock(c) {
+  return `<div class="cardio-block">
+    <div class="cardio-icon">${c.icon}</div>
+    <div class="cardio-info"><h3>${c.label}</h3><p>${c.detail}</p></div>
+  </div>`;
+}
+
+function exerciseCard(ex, gi, ei, ds) {
+  const pfx = `w${currentWeek}_d${currentDay}_g${gi}_e${ei}`;
+  let checked = 0, rows = '';
+  for (let s = 0; s < ex.sets; s++) {
+    const key = `${pfx}_s${s}`;
+    const sv = ds.sets[key] || {};
+    if (sv.checked) checked++;
+    const target = ex.isTime ? ex.reps : `${ex.reps} reps`;
+    const wt = ex.weight ? ex.weight : (ex.note ? '' : 'BW');
+    let ws = 0;
+    if (ex.isTime && typeof ex.reps === 'string') {
+      const p = ex.reps.split(':'); ws = parseInt(p[0])*60 + parseInt(p[1]);
+    }
+    rows += `<div class="set-row ${sv.checked?'set-done':''}" id="row_${key}">
+      <div class="set-num">${s+1}</div>
+      <div class="set-target">${wt ? wt + ' · ' : ''}${target}</div>
+      <input class="set-input ${sv.note?'has-value':''}" type="text"
+        placeholder="${ex.isTime?'notes':'actual'}" value="${sv.note||''}" data-key="${key}">
+      <button class="timer-btn" data-work="${ws}" data-rest="${ex.restSecs||60}"
+        data-exname="${ex.name.replace(/"/g,"'")}" data-setnum="${s+1}"
+        onclick="launchTimer(this)">${ex.isTime?'▶':'⏱'}</button>
+      <div class="set-checkbox">
+        <input type="checkbox" class="set-check" data-key="${key}" ${sv.checked?'checked':''}>
+      </div>
+    </div>`;
+  }
+  const allDone = checked === ex.sets;
+  const showNote = ex.note && !/per side/i.test(ex.note);
+  return `<div class="exercise-card ${allDone?'all-done':''}" id="card_${pfx}">
+    <div class="exercise-header">
+      <div class="exercise-name-wrap">
+        <div class="exercise-name">${ex.name}</div>
+        ${showNote ? `<div class="exercise-note">${ex.note}</div>` : ''}
+      </div>
+      <div class="exercise-meta">
+        ${ex.note && /per side/i.test(ex.note) ? `<span class="note-tag">per side</span>` : ''}
+        <span class="sets-badge">${ex.sets} sets</span>
+        <span class="check-count ${allDone?'done':''}">${checked}/${ex.sets}</span>
+        <span class="chevron">▾</span>
+      </div>
+    </div>
+    <div class="sets-table">
+      <div class="sets-header"><span>SET</span><span>TARGET</span><span>LOG</span><span>⏱</span><span>✓</span></div>
+      ${rows}
+    </div>
+  </div>`;
+}
+
+function updateCardDone(cb) {
+  const parts = cb.dataset.key.split('_');
+  const pfx = parts.slice(0,5).join('_');
+  const card = document.getElementById(`card_${pfx}`);
+  if (!card) return;
+  const checks = card.querySelectorAll('.set-check');
+  const done = Array.from(checks).filter(c => c.checked).length;
+  card.querySelector('.check-count').textContent = `${done}/${checks.length}`;
+  card.querySelector('.check-count').classList.toggle('done', done === checks.length);
+  card.classList.toggle('all-done', done === checks.length);
+  const row = document.getElementById(`row_${cb.dataset.key}`);
+  if (row) row.classList.toggle('set-done', cb.checked);
+}
+
+function completeDay() {
+  const ds = getDayState(currentWeek, currentDay);
+  ds.completed = true;
+  saveState();
+  updateWeekProgress();
+  renderTabs();
+  renderDay();
+  renderOverview();
+  const d = program[currentWeek].days[currentDay];
+  const dayLabel = typeof d.day === 'number' ? `Day ${d.day}` : d.day;
+  showToast(`🔥 ${dayLabel} done! Keep it up!`);
+}
+
+// ══════════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════════
+const CIRC = 2 * Math.PI * 90;
+let T = { running:false, paused:false, phase:'work', total:0, remaining:0, workSecs:0, restSecs:0, exName:'', setNum:1, iv:null };
+
+function launchTimer(btn) {
+  const ws = parseInt(btn.dataset.work)||30, rs = parseInt(btn.dataset.rest)||60;
+  if (!ws && !rs) return;
+  stopTimer(true);
+  T.workSecs=ws; T.restSecs=rs; T.exName=btn.dataset.exname||''; T.setNum=btn.dataset.setnum||'1';
+  startPhase(ws>0?'work':'rest');
+  document.getElementById('timer-overlay').classList.add('visible');
+}
+
+function startPhase(phase) {
+  clearInterval(T.iv);
+  T.phase=phase; T.paused=false; T.running=true;
+  const secs = phase==='work' ? T.workSecs : T.restSecs;
+  T.total=secs; T.remaining=secs;
+  updateTimerUI();
+  T.iv = setInterval(()=>{
+    if (T.paused) return;
+    T.remaining--;
+    updateTimerUI();
+    if (T.remaining<=0) {
+      clearInterval(T.iv);
+      beep(phase==='work'?880:440);
+      if (phase==='work' && T.restSecs>0) {
+        document.getElementById('timer-ring-wrap').classList.add('pulse');
+        setTimeout(()=>{ document.getElementById('timer-ring-wrap').classList.remove('pulse'); startPhase('rest'); }, 500);
+      } else { setTimeout(()=>stopTimer(), 800); }
+    }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const isW = T.phase==='work';
+  const phEl = document.getElementById('timer-phase');
+  phEl.textContent = isW ? '▶ WORK' : '💤 REST';
+  phEl.className = `timer-phase ${T.phase}`;
+  document.getElementById('timer-ex-name').textContent = T.exName;
+  document.getElementById('timer-set-info').textContent = `SET ${T.setNum}`;
+  const dEl = document.getElementById('timer-digits');
+  dEl.textContent = fmtTime(T.remaining);
+  dEl.className = `timer-time ${T.phase}`;
+  const ring = document.getElementById('timer-ring-fill');
+  ring.className = `timer-ring-fill ${T.phase}`;
+  ring.style.strokeDashoffset = CIRC * (1-(T.total>0?T.remaining/T.total:0));
+  const pb = document.getElementById('timer-pause-btn');
+  pb.textContent = T.paused ? 'Resume' : 'Pause';
+  pb.className = `timer-ctrl-btn ${T.paused||isW ? 'primary' : 'rest-primary'}`;
+}
+
+function fmtTime(s) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
+function togglePause() { T.paused=!T.paused; updateTimerUI(); }
+function skipTimer() { clearInterval(T.iv); T.phase==='work'&&T.restSecs>0 ? startPhase('rest') : stopTimer(); }
+function stopTimer(silent) {
+  clearInterval(T.iv); T.running=false; T.paused=false;
+  if (!silent) document.getElementById('timer-overlay').classList.remove('visible');
+}
+function beep(freq) {
+  try {
+    const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();
+    o.connect(g); g.connect(c.destination); o.frequency.value=freq; o.type='sine';
+    g.gain.setValueAtTime(0.3,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.6);
+    o.start(c.currentTime); o.stop(c.currentTime+0.6);
+  } catch(e){}
+}
+
+// ══════════════════════════════════════════════
+// TOAST & INIT
+// ══════════════════════════════════════════════
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+showOverview();
+</script>
+</body>
+</html>
